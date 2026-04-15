@@ -1,0 +1,639 @@
+/* ============================================
+   TSUNDOKU TOULON - PAGES
+   Styles spécifiques pour chaque section
+   ============================================ */
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+.hero-section {
+    position: relative;
+    min-height: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--spacing-xl) var(--spacing-md);
+    background: linear-gradient(135deg, 
+        rgba(255, 64, 129, 0.1) 0%, 
+        rgba(0, 71, 255, 0.1) 100%),
+        var(--noir);
+    background-attachment: fixed;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(255, 64, 129, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(0, 71, 255, 0.1) 0%, transparent 50%);
+    animation: pulse 8s ease-in-out infinite;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+}
+
+.hero-title {
+    font-size: clamp(40px, 8vw, 72px);
+    background: var(--gradient-principal);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--spacing-md);
+    text-shadow: 0 4px 20px rgba(255, 64, 129, 0.3);
+}
+
+.hero-subtitle {
+    font-size: clamp(16px, 3vw, 20px);
+    color: var(--gris-clair);
+    margin-bottom: var(--spacing-lg);
+    font-weight: 400;
+    letter-spacing: 1px;
+}
+
+.hero-cta {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.hero-features {
+    display: flex;
+    gap: var(--spacing-lg);
+    justify-content: center;
+    margin-top: var(--spacing-xl);
+    flex-wrap: wrap;
+}
+
+.hero-feature {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    color: var(--creme);
+    font-size: 15px;
+}
+
+.hero-feature-icon {
+    font-size: 24px;
+}
+
+/* ============================================
+   SORTIES SECTION (Mangas à venir)
+   ============================================ */
+.sorties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.sortie-card {
+    background: var(--noir-sec);
+    border: 2px solid transparent;
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+    cursor: pointer;
+    position: relative;
+}
+
+.sortie-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-horizontal);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.sortie-card:hover {
+    border-color: var(--rose-principal);
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-glow);
+}
+
+.sortie-card:hover::before {
+    opacity: 1;
+}
+
+.sortie-cover {
+    width: 100%;
+    aspect-ratio: 7/10;
+    object-fit: cover;
+    background: linear-gradient(135deg, var(--gris-fonce), var(--noir-sec));
+}
+
+.sortie-info {
+    padding: var(--spacing-sm);
+}
+
+.sortie-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--blanc);
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.sortie-author {
+    font-size: 13px;
+    color: var(--gris-clair);
+    margin-bottom: var(--spacing-xs);
+}
+
+.sortie-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-xs);
+}
+
+.sortie-date {
+    font-size: 13px;
+    color: var(--rose-clair);
+    font-weight: 600;
+}
+
+.sortie-badge {
+    background: var(--gradient-principal);
+    color: var(--blanc);
+    padding: 4px 10px;
+    border-radius: var(--border-radius-full);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* ============================================
+   SELECTION SECTION (Coups de cœur)
+   ============================================ */
+.selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.selection-card {
+    background: linear-gradient(135deg, rgba(255, 64, 129, 0.05), rgba(0, 71, 255, 0.05));
+    border: 2px solid var(--gris);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-md);
+    transition: all var(--transition-normal);
+}
+
+.selection-card:hover {
+    border-color: var(--rose-principal);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.selection-header {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.selection-cover {
+    width: 80px;
+    height: 115px;
+    object-fit: cover;
+    border-radius: var(--border-radius-sm);
+    background: var(--gris-fonce);
+}
+
+.selection-info {
+    flex: 1;
+}
+
+.selection-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--blanc);
+    margin-bottom: 4px;
+}
+
+.selection-author {
+    font-size: 13px;
+    color: var(--gris-clair);
+}
+
+.selection-reviewer {
+    font-size: 12px;
+    color: var(--rose-clair);
+    margin-top: var(--spacing-xs);
+}
+
+.selection-body {
+    color: var(--creme);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: var(--spacing-sm);
+}
+
+.selection-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--gris);
+}
+
+.selection-rating {
+    color: var(--or);
+    font-size: 16px;
+}
+
+/* ============================================
+   ARTICLES SECTION (Blog)
+   ============================================ */
+.articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.article-card {
+    background: var(--noir-sec);
+    border: 2px solid var(--gris);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+    cursor: pointer;
+}
+
+.article-card:hover {
+    border-color: var(--rose-principal);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.article-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: linear-gradient(135deg, var(--gris-fonce), var(--noir-sec));
+}
+
+.article-content {
+    padding: var(--spacing-md);
+}
+
+.article-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--blanc);
+    margin-bottom: var(--spacing-xs);
+}
+
+.article-meta {
+    display: flex;
+    gap: var(--spacing-sm);
+    font-size: 12px;
+    color: var(--gris-clair);
+    margin-bottom: var(--spacing-sm);
+}
+
+.article-date {
+    color: var(--rose-clair);
+}
+
+.article-excerpt {
+    color: var(--creme);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: var(--spacing-sm);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.article-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--gris);
+}
+
+.article-read-more {
+    color: var(--rose-principal);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================
+   QUIZ SECTION
+   ============================================ */
+.quiz-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.quiz-header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.quiz-title {
+    font-size: 32px;
+    background: var(--gradient-principal);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--spacing-sm);
+}
+
+.quiz-description {
+    color: var(--gris-clair);
+    font-size: 15px;
+}
+
+.quiz-progress {
+    background: var(--gris-fonce);
+    height: 8px;
+    border-radius: var(--border-radius-full);
+    overflow: hidden;
+    margin-bottom: var(--spacing-lg);
+}
+
+.quiz-progress-bar {
+    height: 100%;
+    background: var(--gradient-horizontal);
+    transition: width var(--transition-slow);
+}
+
+.quiz-question {
+    background: linear-gradient(135deg, rgba(255, 64, 129, 0.05), rgba(0, 71, 255, 0.05));
+    border: 2px solid var(--gris);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.quiz-question-number {
+    color: var(--rose-principal);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: var(--spacing-xs);
+}
+
+.quiz-question-text {
+    font-size: 20px;
+    color: var(--blanc);
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+}
+
+.quiz-answers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.quiz-answer {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid var(--gris);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--creme);
+    font-size: 15px;
+    text-align: left;
+    transition: all var(--transition-normal);
+    cursor: pointer;
+}
+
+.quiz-answer:hover {
+    border-color: var(--bleu-principal);
+    background: rgba(0, 71, 255, 0.1);
+}
+
+.quiz-answer.selected {
+    border-color: var(--rose-principal);
+    background: rgba(255, 64, 129, 0.1);
+}
+
+.quiz-answer.correct {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.quiz-answer.incorrect {
+    border-color: var(--rose-principal);
+    background: rgba(255, 64, 129, 0.1);
+}
+
+.quiz-result {
+    background: var(--gradient-principal);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--blanc);
+}
+
+.quiz-result-score {
+    font-size: 64px;
+    font-weight: 900;
+    margin-bottom: var(--spacing-sm);
+}
+
+.quiz-result-text {
+    font-size: 24px;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* ============================================
+   HORAIRES & MAP SECTION
+   ============================================ */
+.horaires-section {
+    background: linear-gradient(135deg, rgba(255, 64, 129, 0.05), rgba(0, 71, 255, 0.05));
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.horaires-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.horaires-card {
+    background: var(--noir-sec);
+    border: 2px solid var(--gris);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-md);
+}
+
+.horaires-title {
+    font-size: 20px;
+    background: var(--gradient-principal);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--spacing-md);
+}
+
+.horaires-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.horaires-item {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--gris);
+    font-size: 14px;
+}
+
+.horaires-item:last-child {
+    border-bottom: none;
+}
+
+.horaires-day {
+    color: var(--creme);
+    font-weight: 600;
+}
+
+.horaires-time {
+    color: var(--rose-clair);
+}
+
+.horaires-time.closed {
+    color: var(--gris-moyen);
+}
+
+.map-container {
+    border: 2px solid var(--gris);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    height: 400px;
+    background: var(--gris-fonce);
+}
+
+.map-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* ============================================
+   RESERVATION SECTION
+   ============================================ */
+.reservation-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.reservation-form {
+    background: linear-gradient(135deg, rgba(255, 64, 129, 0.05), rgba(0, 71, 255, 0.05));
+    border: 2px solid var(--gris);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+}
+
+/* ============================================
+   AVIS SECTION
+   ============================================ */
+.avis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.avis-card {
+    background: var(--noir-sec);
+    border: 2px solid var(--gris);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-md);
+    transition: all var(--transition-normal);
+}
+
+.avis-card:hover {
+    border-color: var(--rose-principal);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.avis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.avis-shop {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--blanc);
+}
+
+.avis-rating {
+    color: var(--or);
+    font-size: 18px;
+}
+
+.avis-body {
+    color: var(--creme);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .hero-section {
+        min-height: 400px;
+    }
+    
+    .hero-features {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .sorties-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+    
+    .selection-grid,
+    .articles-grid,
+    .avis-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .horaires-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .map-container {
+        height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sorties-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+}
