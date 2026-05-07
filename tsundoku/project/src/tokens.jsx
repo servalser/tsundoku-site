@@ -53,7 +53,7 @@ if (typeof document !== 'undefined' && !document.getElementById('tsundoku-fonts'
   style.textContent = `
     @font-face {
       font-family: 'Crispy Tofu';
-      src: url('/tsundoku/project/assets/fonts/crispy-tofu.ttf') format('truetype');
+      src: url('tsundoku/project/assets/fonts/crispy-tofu.ttf') format('truetype');
       font-weight: normal;
       font-style: normal;
       font-display: swap;
