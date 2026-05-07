@@ -1,0 +1,10 @@
+# Tsundoku Toulon - Configuration Apache
+RewriteEngine On
+RewriteBase /tsundoku-toulon/
+
+# Redirection HTTPS (production)
+# RewriteCond %{HTTPS} !=on
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Page par défaut
+DirectoryIndex index.html index.php
