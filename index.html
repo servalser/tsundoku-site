@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Tsundoku — Librairie manga</title>
+<style>
+  /* Le site occupe toute la fenetre. Le scroll est gere par un div interne
+     pour permettre le reset programmatique du scroll au changement de page. */
+  html, body {
+    margin: 0; padding: 0;
+    height: 100%; overflow: hidden;
+    overflow-x: hidden; /* empêche le débordement horizontal sur mobile */
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+  #root { height: 100%; }
+  * { box-sizing: border-box; }
+  button { font-family: inherit; }
+
+  /* Modale de connexion */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- React 18 + ReactDOM (sans build, via CDN) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<!-- Babel Standalone : compile le JSX dans le navigateur, evite une etape de build -->
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Tokens de design (couleurs, polices, helpers CSS halftone/speed-lines, breakpoints) -->
+<script type="text/babel" src="tsundoku/project/src/tokens.jsx?v=7"></script>
+
+<!-- Split-screen d'entree (choix Toulon / Marseille) -->
+<script type="text/babel" src="tsundoku/project/src/split-a.jsx?v=7"></script>
+
+<!-- page-catalog en premier : expose RESA_LIMIT dont shop-sections a besoin -->
+<script type="text/babel" src="tsundoku/project/src/page-catalog.jsx?v=7"></script>
+
+<!-- Navbar + heros + sections de la page d'accueil boutique -->
+<script type="text/babel" src="tsundoku/project/src/shop-nav.jsx?v=8"></script>
+<script type="text/babel" src="tsundoku/project/src/shop-sections.jsx?v=7"></script>
+
+<!-- Autres pages du site -->
+<script type="text/babel" src="tsundoku/project/src/page-manga.jsx?v=7"></script>
+<script type="text/babel" src="tsundoku/project/src/page-quizz.jsx?v=7"></script>
+<script type="text/babel" src="tsundoku/project/src/page-event.jsx?v=7"></script>
+<script type="text/babel" src="tsundoku/project/src/page-about.jsx?v=7"></script>
+<script type="text/babel" src="tsundoku/project/src/page-contact.jsx?v=7"></script>
+
+<!-- Panel admin — accessible via /#admin -->
+<script type="text/babel" src="tsundoku/project/src/page-admin.jsx?v=7"></script>
+
+<!-- Espace client — réservations et profil du client connecté -->
+<script type="text/babel" src="tsundoku/project/src/page-client.jsx?v=8"></script>
+
+<script type="text/babel">
+
+/* ═══════════════════════════════════════════════════════════════
+   URL de l'API Laravel backend
+   ═══════════════════════════════════════════════════════════════ */
+const API_URL = 'http://localhost:8080';
+
+/* ═══════════════════════════════════════════════════════════════
+   Utilitaire fetch API — inclut les cookies de session (credentials)
+   et ajoute les headers obligatoires (Content-Type, X-Requested-With).
+   ═══════════════════════════════════════════════════════════════ */
+async function apiFetch(path, options = {}) {
+  const res = await fetch(API_URL + path, {
+    credentials: 'include',   // CRITIQUE : envoie le cookie de session Laravel
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',  // identifie la requete comme AJAX
+      ...options.headers,
+    },
+    ...options,
+  });
+  const data = await res.json();
+  return { ok: res.ok, status: res.status, data };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LoginModal
+   Modale qui s'ouvre quand l'utilisateur clique "Se connecter".
+   Gère connexion ET inscription via deux onglets.
+   Appelle l'API Laravel pour authentifier.
+   ═══════════════════════════════════════════════════════════════ */
+function LoginModal({ open, onClose, onSuccess, shop }) {
+  const S = TSUNDOKU[shop];
+  // 'login' ou 'register' — bascule entre les deux formulaires
+  const [mode, setMode]       = React.useState('login');
+  const [email, setEmail]     = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [nom, setNom]         = React.useState('');
+  const [prenom, setPrenom]   = React.useState('');
+  const [erreur, setErreur]   = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+
+  if (!open) return null;
+
+  const inputStyle = {
+    width: '100%', padding: '12px 14px',
+    background: '#1c1c26',
+    border: '1px solid rgba(255,255,255,.1)',
+    color: '#fff', fontSize: 14,
+    fontFamily: FONTS.body, borderRadius: 3, outline: 'none',
+  };
+  const labelStyle = {
+    fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,.5)',
+    marginBottom: 6, marginTop: 16, fontWeight: 700, display: 'block',
+  };
+
+  async function soumettre() {
+    setErreur('');
+    setLoading(true);
+    try {
+      const path = mode === 'login' ? '/api/auth/connexion' : '/api/auth/inscription';
+      const body = mode === 'login'
+        ? { email, password }
+        : { nom, prenom, email, password };
+
+      const { ok, data } = await apiFetch(path, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      if (ok && data.success) {
+        onSuccess(data.data);   // transmet le profil client au composant parent
+      } else {
+        setErreur(data.message || 'Erreur de connexion');
+      }
+    } catch (e) {
+      setErreur('Impossible de contacter le serveur. Assurez-vous que le backend tourne sur le port 8080.');
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: 440,
+        background: '#0f0f18', color: '#fff',
+        border: `1px solid ${S.accent}55`,
+        borderRadius: 6, padding: 36,
+        fontFamily: FONTS.body,
+        position: 'relative', overflow: 'hidden',
+      }}>
+        {/* Motif de points decoratif */}
+        <div style={{ position: 'absolute', inset: 0, color: S.accent, opacity: .08, ...HALFTONE_MED, pointerEvents: 'none' }} />
+
+        <div style={{ position: 'relative' }}>
+          {/* Onglets connexion / inscription */}
+          <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,.1)' }}>
+            {[['login', 'Connexion'], ['register', 'Inscription']].map(([m, label]) => (
+              <button key={m} onClick={() => { setMode(m); setErreur(''); }} style={{
+                padding: '10px 20px', border: 'none', background: 'transparent',
+                color: mode === m ? S.accent : 'rgba(255,255,255,.4)',
+                fontWeight: 700, fontSize: 12, letterSpacing: 2,
+                textTransform: 'uppercase', cursor: 'pointer', fontFamily: FONTS.body,
+                borderBottom: mode === m ? `2px solid ${S.accent}` : '2px solid transparent',
+                marginBottom: -1, transition: 'color .15s',
+              }}>{label}</button>
+            ))}
+          </div>
+
+          <div style={{ fontFamily: FONTS.display, fontSize: 32, lineHeight: 1, letterSpacing: -1, marginBottom: 20 }}>
+            {mode === 'login' ? 'Bon retour.' : 'Créer un compte.'}
+          </div>
+
+          {/* Champs supplémentaires pour l'inscription */}
+          {mode === 'register' && (
+            <>
+              <label style={labelStyle}>PRÉNOM</label>
+              <input value={prenom} onChange={e => setPrenom(e.target.value)} placeholder="Votre prénom" style={inputStyle} />
+              <label style={labelStyle}>NOM</label>
+              <input value={nom} onChange={e => setNom(e.target.value)} placeholder="Votre nom" style={inputStyle} />
+            </>
+          )}
+
+          <label style={labelStyle}>EMAIL</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="votre@email.fr" style={inputStyle} />
+
+          <label style={labelStyle}>MOT DE PASSE</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+            placeholder={mode === 'register' ? '6 caractères minimum' : '••••••••'} style={inputStyle} />
+
+          {/* Message d'erreur */}
+          {erreur && (
+            <div style={{
+              marginTop: 14, padding: '10px 14px', background: 'rgba(255,56,96,.1)',
+              border: '1px solid rgba(255,56,96,.3)', borderRadius: 3,
+              fontSize: 13, color: '#ff6b8a', lineHeight: 1.4,
+            }}>{erreur}</div>
+          )}
+
+          <button onClick={soumettre} disabled={loading} style={{
+            marginTop: 26, width: '100%',
+            background: loading ? 'rgba(255,255,255,.2)' : S.accent,
+            color: S.bgDeep, border: 'none', padding: '14px',
+            fontWeight: 700, fontSize: 13, letterSpacing: 3,
+            textTransform: 'uppercase', borderRadius: 99,
+            cursor: loading ? 'wait' : 'pointer',
+          }}>
+            {loading ? 'Chargement…' : mode === 'login' ? 'Se connecter →' : 'Créer mon compte →'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Site
+   Composant racine du site. Gere le routage entre les vues :
+     choice  → split-screen de selection de boutique
+     shop    → page d'accueil de la boutique choisie
+     catalog → rayon / nouveautes
+     manga   → fiche produit d'un manga
+     quizz   → quizz interactif
+     event   → fiche evenement
+   ═══════════════════════════════════════════════════════════════ */
+function Site({ shop, onShopChange, theme, onThemeToggle, initialView }) {
+  /* initialView permet de demarrer directement sur une vue precise (ex: 'admin') */
+  const [view, setView]       = React.useState(initialView || 'choice');
+  const [mangaId, setMangaId] = React.useState('cs');
+  const [loginOpen, setLoginOpen]   = React.useState(false);
+  const [connected, setConnected]   = React.useState(false);
+  // Profil du client connecté — null si non connecté
+  const [client, setClient]         = React.useState(null);
+
+  /* Restaure la session au chargement si le cookie de session est encore valide */
+  React.useEffect(() => {
+    apiFetch('/api/auth/session').then(({ ok, data }) => {
+      if (ok && data.success) {
+        setConnected(true);
+        setClient(data.data);
+      }
+    }).catch(() => { /* serveur hors ligne — mode offline OK */ });
+  }, []);
+
+  /* Déconnexion : appelle l'API puis efface l'état local */
+  async function deconnecter() {
+    await apiFetch('/api/auth/deconnexion', { method: 'POST' }).catch(() => {});
+    setConnected(false);
+    setClient(null);
+  }
+
+  /* nav(vue, payload?) — change de page et remet le scroll a zero */
+  const nav = (v, payload) => {
+    if (v === 'manga' && payload) setMangaId(payload);
+    setView(v);
+    // Le div [data-page-scroll] est le conteneur scrollable des pages interieures
+    requestAnimationFrame(() => {
+      const el = document.querySelector('[data-page-scroll]');
+      if (el) el.scrollTop = 0;
+    });
+  };
+
+  /* Props communs a toutes les pages interieures */
+  const pageProps = {
+    shop, theme, connected, client,
+    // Quand le client est déjà connecté, le bouton "Se connecter" ouvre l'espace client.
+    // Sinon, il ouvre la modale de connexion.
+    onConnect:      () => connected ? nav('client') : setLoginOpen(true),
+    onBack:         () => nav('choice'),
+    onToggleTheme:  onThemeToggle,
+    onShopSwitch:   (s) => { onShopChange(s); },
+    onNav:          nav,
+  };
+
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+
+      {/* ── VUE CHOIX : split-screen plein ecran ── */}
+      {view === 'choice' && (
+        <div
+          style={{ width: '100%', height: '100%' }}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const picked = (e.clientX - rect.left) / rect.width < 0.5
+              ? 'toulon'
+              : 'marseille';
+            onShopChange(picked);
+            nav('shop');
+          }}
+        >
+          {/* width/height en "100%" → le composant herite des dimensions du conteneur */}
+          <SplitScreenA width="100%" height="100%" animIntensity={1} />
+        </div>
+      )}
+
+      {/* ── PANEL ADMIN : layout propre, gere son propre scroll interne ── */}
+      {view === 'admin' && (
+        <div style={{ width: '100%', height: '100%' }}>
+          <AdminPage {...pageProps} />
+        </div>
+      )}
+
+      {/* ── PAGES INTERIEURES : contenu scrollable ── */}
+      {view !== 'choice' && view !== 'admin' && (
+        <div
+          data-page-scroll
+          style={{ width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden' }}
+        >
+          {view === 'shop'    && <ShopHomepage    {...pageProps} intensity={1} />}
+          {view === 'catalog' && <CatalogPage     {...pageProps} onOpenManga={(id) => nav('manga', id)} />}
+          {view === 'manga'   && <MangaDetailPage {...pageProps} mangaId={mangaId} />}
+          {view === 'quizz'   && <QuizzPage       {...pageProps} />}
+          {view === 'event'   && <EventPage       {...pageProps} />}
+          {view === 'about'   && <AboutPage       {...pageProps} />}
+          {view === 'contact' && <ContactPage     {...pageProps} />}
+          {/* Espace client : déconnexion + retour à la page boutique */}
+          {view === 'client'  && <ClientPage      {...pageProps}
+            onDeconnect={async () => { await deconnecter(); nav('shop'); }}
+          />}
+        </div>
+      )}
+
+      {/* Modale de connexion — flotte au-dessus de tout */}
+      <LoginModal
+        open={loginOpen}
+        shop={shop}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={(profil) => { setConnected(true); setClient(profil); setLoginOpen(false); }}
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   App
+   Niveau le plus haut : detient l'etat global (boutique, theme)
+   et monte le composant Site.
+   ═══════════════════════════════════════════════════════════════ */
+function App() {
+  /* Theme : respecte la preference systeme de l'utilisateur au premier chargement */
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const [theme, setTheme] = React.useState(prefersDark ? 'dark' : 'light');
+
+  /* Boutique active : marseille par defaut */
+  const [shop, setShop] = React.useState('marseille');
+
+  /* Detection du hash dans l'URL pour acceder directement a une vue.
+     Ex : http://localhost:7788/#admin ouvre le panel admin sans passer par le split-screen. */
+  const initialView = window.location.hash === '#admin' ? 'admin' : 'choice';
+
+  return (
+    <div style={{ width: '100vw', height: '100vh' }}>
+      <Site
+        shop={shop}
+        onShopChange={setShop}
+        theme={theme}
+        onThemeToggle={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+        initialView={initialView}
+      />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Boot
+   Les scripts type="text/babel" sont charges de facon asynchrone.
+   On attend que tous les composants soient disponibles sur window
+   avant de monter React dans #root.
+   ═══════════════════════════════════════════════════════════════ */
+function boot() {
+  const ready =
+    window.useBreakpoint   &&
+    window.SplitScreenA    &&
+    window.ShopHomepage    &&
+    window.CatalogPage     &&
+    window.MangaDetailPage &&
+    window.QuizzPage       &&
+    window.EventPage       &&
+    window.AboutPage       &&
+    window.ContactPage     &&
+    window.AdminPage       &&
+    window.ClientPage;  // espace client
+
+  if (!ready) return setTimeout(boot, 80);
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+}
+boot();
+</script>
+</body>
+</html>

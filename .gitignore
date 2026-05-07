@@ -1,0 +1,30 @@
+# Environnement
+.env
+.env.*
+*.local
+
+# Node (au cas où)
+node_modules/
+
+# Python
+__pycache__/
+
+# Java
+*.class
+target/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
+
+# Fichiers documentation — jamais commités
+*.md

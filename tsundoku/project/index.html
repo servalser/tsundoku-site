@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Tsundoku — Librairie manga</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: -apple-system, "Segoe UI", system-ui, sans-serif; overflow-x: hidden; }
+  * { box-sizing: border-box; }
+  button { font-family: inherit; }
+  /* Modal */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(6px); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="src/tokens.jsx"></script>
+<script type="text/babel" src="src/split-a.jsx"></script>
+<script type="text/babel" src="src/split-b.jsx"></script>
+<script type="text/babel" src="src/split-c.jsx"></script>
+<script type="text/babel" src="src/shop-nav.jsx"></script>
+<script type="text/babel" src="src/shop-sections.jsx"></script>
+<script type="text/babel" src="src/page-catalog.jsx"></script>
+<script type="text/babel" src="src/page-manga.jsx"></script>
+<script type="text/babel" src="src/page-quizz.jsx"></script>
+<script type="text/babel" src="src/page-event.jsx"></script>
+<script type="text/babel" src="src/page-about.jsx"></script>
+<script type="text/babel" src="src/page-contact.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+
+<script type="text/babel">
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "shop": "marseille",
+  "animIntensity": 1
+}/*EDITMODE-END*/;
+
+function LoginModal({ open, onClose, onSubmit, shop }) {
+  const S = TSUNDOKU[shop];
+  if (!open) return null;
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: 440, background: '#0f0f18', color: '#fff',
+        border: `1px solid ${S.accent}55`, borderRadius: 6, padding: 36,
+        fontFamily: FONTS.body, position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0, color: S.accent, opacity: .08, ...HALFTONE_MED, pointerEvents: 'none',
+        }} />
+        <div style={{ position: 'relative' }}>
+          <div style={{ fontSize: 11, letterSpacing: 4, color: S.accent, fontWeight: 700, marginBottom: 10 }}>
+            CONNEXION · ログイン
+          </div>
+          <div style={{ fontFamily: FONTS.display, fontSize: 36, lineHeight: 1, letterSpacing: -1 }}>
+            Bon retour.
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginTop: 10, lineHeight: 1.5 }}>
+            Utilisez l'email et le mot de passe créés lors de votre passage à la boutique {S.name}.
+          </div>
+          <div style={{ marginTop: 24 }}>
+            <div style={{ fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,.5)', marginBottom: 6, fontWeight: 700 }}>EMAIL</div>
+            <input defaultValue="yuki.k@example.com" style={{
+              width: '100%', padding: '12px 14px', background: '#1c1c26', border: `1px solid rgba(255,255,255,.1)`,
+              color: '#fff', fontSize: 14, fontFamily: FONTS.body, borderRadius: 3,
+            }} />
+            <div style={{ fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,.5)', marginTop: 16, marginBottom: 6, fontWeight: 700 }}>MOT DE PASSE</div>
+            <input type="password" defaultValue="••••••••" style={{
+              width: '100%', padding: '12px 14px', background: '#1c1c26', border: `1px solid rgba(255,255,255,.1)`,
+              color: '#fff', fontSize: 14, fontFamily: FONTS.body, borderRadius: 3,
+            }} />
+          </div>
+          <button onClick={onSubmit} style={{
+            marginTop: 26, width: '100%', background: S.accent, color: S.bgDeep, border: 'none',
+            padding: '14px', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase',
+            borderRadius: 99, cursor: 'pointer',
+          }}>Se connecter →</button>
+          <div style={{ marginTop: 16, fontSize: 11, color: 'rgba(255,255,255,.4)', textAlign: 'center' }}>
+            Pas de compte ? Passez en boutique pour en créer un.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- Interactive prototype: choice → shop → catalog → manga / quizz / event ----
+function Prototype({ splitVariant = 'A', initialShop, intensity, theme, onTheme, onShop, shop, initialView = 'choice' }) {
+  const [view, setView] = React.useState(initialView); // 'choice'|'shop'|'catalog'|'manga'|'quizz'|'event'
+  const [mangaId, setMangaId] = React.useState('cs');
+  const [loginOpen, setLoginOpen] = React.useState(false);
+  const [connected, setConnected] = React.useState(false);
+
+  const Split = { A: SplitScreenA, B: SplitScreenB, C: SplitScreenC }[splitVariant];
+
+  const nav = (v, payload) => {
+    if (v === 'manga' && payload) setMangaId(payload);
+    setView(v);
+    // Scroll container to top when changing pages
+    setTimeout(() => {
+      const el = document.querySelector('[data-proto-scroll]');
+      if (el) el.scrollTop = 0;
+    }, 0);
+  };
+
+  const sharedProps = {
+    shop, theme, connected,
+    onConnect: () => connected ? setConnected(false) : setLoginOpen(true),
+    onBack: () => setView('choice'),
+    onToggleTheme: onTheme,
+    onShopSwitch: (s) => onShop(s),
+    onNav: nav,
+  };
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {view === 'choice' ? (
+        <div
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const picked = x < 0.5 ? 'toulon' : 'marseille';
+            onShop(picked);
+            setView('shop');
+          }}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <Split width="100%" height="100%" animIntensity={intensity} />
+        </div>
+      ) : (
+        <div data-proto-scroll style={{ width: '100%', height: '100%', overflow: 'auto' }}>
+          {view === 'shop' && <ShopHomepage {...sharedProps} intensity={intensity} />}
+          {view === 'catalog' && <CatalogPage {...sharedProps} onOpenManga={(id) => nav('manga', id)} />}
+          {view === 'manga' && <MangaDetailPage {...sharedProps} mangaId={mangaId} />}
+          {view === 'quizz'   && <QuizzPage   {...sharedProps} />}
+          {view === 'event'   && <EventPage   {...sharedProps} />}
+          {view === 'about'   && <AboutPage   {...sharedProps} />}
+          {view === 'contact' && <ContactPage {...sharedProps} />}
+        </div>
+      )}
+      <LoginModal open={loginOpen} shop={shop}
+        onClose={() => setLoginOpen(false)}
+        onSubmit={() => { setConnected(true); setLoginOpen(false); }} />
+    </div>
+  );
+}
+
+// ----- Fixed-size wrapper used inside artboards (they have fixed width/height). -----
+function FixedSplit({ Variant, width, height, intensity }) {
+  return <Variant width={width} height={height} animIntensity={intensity} />;
+}
+
+// ----- App with Tweaks panel + design canvas -----
+function App() {
+  const prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const [theme, setTheme] = React.useState(prefersDark ? 'dark' : 'light');
+  const [shop, setShop] = React.useState(TWEAKS.shop || 'toulon');
+  const [intensity, setIntensity] = React.useState(TWEAKS.animIntensity);
+  const [editMode, setEditMode] = React.useState(false);
+
+  // Tweaks protocol
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const d = e.data || {};
+      if (d.type === '__activate_edit_mode') setEditMode(true);
+      if (d.type === '__deactivate_edit_mode') setEditMode(false);
+    };
+    window.addEventListener('message', onMsg);
+    // announce after listener is live
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const persist = (patch) => {
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, '*');
+  };
+
+  const updateShop = (s) => { setShop(s); persist({ shop: s }); };
+  const updateIntensity = (v) => { setIntensity(v); persist({ animIntensity: v }); };
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  return (
+    <>
+      <DesignCanvas
+        hostTitle="Tsundoku — Librairie manga"
+        hostSubtitle="Split-screen de choix · page d'accueil boutique · 3 directions"
+      >
+        <DCSection id="hero" title="Prototype cliquable" subtitle="Clique à gauche pour entrer à Toulon, à droite pour Marseille. Navigation complète entre toutes les pages du site.">
+          <DCArtboard id="proto" label="Prototype · full flow" width={1400} height={900}>
+            <Prototype
+              splitVariant="A"
+              intensity={intensity}
+              theme={theme}
+              onTheme={toggleTheme}
+              shop={shop}
+              onShop={updateShop}
+            />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="splits" title="Split-screen · 3 directions" subtitle="A · Cases BD / onomatopées — B · VS fighting-game — C · Editorial minimal">
+          <DCArtboard id="sa" label="A · Manga panels" width={1280} height={760}>
+            <FixedSplit Variant={SplitScreenA} width={1280} height={760} intensity={intensity} />
+          </DCArtboard>
+          <DCArtboard id="sb" label="B · VS Fighting-game" width={1280} height={760}>
+            <FixedSplit Variant={SplitScreenB} width={1280} height={760} intensity={intensity} />
+          </DCArtboard>
+          <DCArtboard id="sc" label="C · Editorial minimal" width={1280} height={760}>
+            <FixedSplit Variant={SplitScreenC} width={1280} height={760} intensity={intensity} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="home" title="Page d'accueil boutique" subtitle="Les 2 boutiques, mêmes blocs, palette différente">
+          <DCArtboard id="home-toulon" label="Toulon · dark" width={1400} height={3400}>
+            <ShopHomepage shop="toulon" theme="dark" intensity={intensity}
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="home-mars" label="Marseille · dark" width={1400} height={3400}>
+            <ShopHomepage shop="marseille" theme="dark" intensity={intensity}
+              connected={true} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="home-mars-light" label="Marseille · light" width={1400} height={3400}>
+            <ShopHomepage shop="marseille" theme="light" intensity={intensity}
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="catalog" title="Rayon · Nouveautés" subtitle="Catalogue BD-style : couvertures dessinées, grille, filtres par genre">
+          <DCArtboard id="cat-toulon" label="Toulon · dark" width={1400} height={2200}>
+            <CatalogPage shop="toulon" theme="dark"
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onOpenManga={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="cat-mars" label="Marseille · dark" width={1400} height={2200}>
+            <CatalogPage shop="marseille" theme="dark"
+              connected={true} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onOpenManga={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="manga" title="Fiche manga" subtitle="Page produit : couverture, infos, conseil libraire, reco">
+          <DCArtboard id="manga-cs" label="Chainsaw Man · Toulon" width={1400} height={2600}>
+            <MangaDetailPage shop="toulon" theme="dark" mangaId="cs"
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="manga-frn" label="Frieren · Marseille" width={1400} height={2600}>
+            <MangaDetailPage shop="marseille" theme="dark" mangaId="frn"
+              connected={true} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="quizz" title="Quizz interactif" subtitle="Jeu en 5 questions · streaks · score final">
+          <DCArtboard id="quizz-intro" label="Intro · Toulon" width={1400} height={1500}>
+            <QuizzPage shop="toulon" theme="dark"
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="quizz-mars" label="Intro · Marseille" width={1400} height={1500}>
+            <QuizzPage shop="marseille" theme="dark"
+              connected={true} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="event" title="Fiche événement" subtitle="Poster + programme + inscription">
+          <DCArtboard id="evt-toulon" label="Toulon · dark" width={1400} height={1900}>
+            <EventPage shop="toulon" theme="dark"
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="evt-mars" label="Marseille · dark" width={1400} height={1900}>
+            <EventPage shop="marseille" theme="dark"
+              connected={true} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="about" title="À propos" subtitle="Histoire, équipe, valeurs — les 2 boutiques">
+          <DCArtboard id="about-toulon" label="Toulon · dark" width={1400} height={2800}>
+            <AboutPage shop="toulon" theme="dark"
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="about-mars" label="Marseille · dark" width={1400} height={2800}>
+            <AboutPage shop="marseille" theme="dark"
+              connected={true} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="about-light" label="Toulon · light" width={1400} height={2800}>
+            <AboutPage shop="toulon" theme="light"
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="contact" title="Contact" subtitle="Formulaire, infos pratiques, FAQ">
+          <DCArtboard id="contact-toulon" label="Toulon · dark" width={1400} height={2400}>
+            <ContactPage shop="toulon" theme="dark"
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="contact-mars" label="Marseille · dark" width={1400} height={2400}>
+            <ContactPage shop="marseille" theme="dark"
+              connected={true} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+          <DCArtboard id="contact-sent" label="Toulon · message envoyé" width={1400} height={2400}>
+            <ContactPage shop="toulon" theme="dark"
+              connected={false} onConnect={()=>{}} onBack={()=>{}}
+              onToggleTheme={()=>{}} onShopSwitch={()=>{}} onNav={()=>{}} />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      {/* Tweaks panel */}
+      {editMode && (
+        <div style={{
+          position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
+          width: 280, background: '#0f0f18', color: '#fff',
+          border: '1px solid rgba(255,255,255,.15)', borderRadius: 10,
+          padding: 18, fontFamily: FONTS.body, fontSize: 13,
+          boxShadow: '0 20px 60px rgba(0,0,0,.4)',
+        }}>
+          <div style={{
+            fontSize: 11, letterSpacing: 4, color: '#ff7db8', fontWeight: 700,
+            textTransform: 'uppercase', marginBottom: 14,
+          }}>Tweaks · 調整</div>
+
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', marginBottom: 6 }}>Boutique</div>
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,.06)', padding: 3, borderRadius: 99 }}>
+              {['toulon','marseille'].map(s => (
+                <button key={s} onClick={() => updateShop(s)} style={{
+                  flex: 1, padding: '8px', border: 'none', cursor: 'pointer', borderRadius: 99,
+                  background: shop === s ? TSUNDOKU[s].accent : 'transparent',
+                  color: shop === s ? TSUNDOKU[s].bgDeep : '#fff',
+                  fontWeight: 700, fontSize: 11, letterSpacing: 2, textTransform: 'uppercase',
+                }}>{TSUNDOKU[s].name}</button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', lineHeight: 1.5, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.1)' }}>
+            ◇ Clique dans le prototype pour naviguer entre choix / boutique.
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// Wait for all scripts
+function boot() {
+  if (!window.SplitScreenA || !window.ShopHomepage || !window.CatalogPage ||
+      !window.MangaDetailPage || !window.QuizzPage || !window.EventPage ||
+      !window.AboutPage || !window.ContactPage || !window.DesignCanvas) {
+    return setTimeout(boot, 80);
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+}
+boot();
+</script>
+</body>
+</html>
