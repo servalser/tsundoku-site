@@ -752,14 +752,19 @@ function CatalogueView({ accent }) {
 
 // ── Vue Reservations ──────────────────────────────────────────
 
-function ReservationsView({ accent }) {
+function ReservationsView({ accent, shop }) {
   const [resas, setResas]   = React.useState(ADMIN_RESAS);
   const [filtre, setFiltre] = React.useState('Tous');
+
+  // Nom de la boutique active pour filtrer les reservations
+  const boutiqueName = TSUNDOKU[shop].name;
 
   const FILTRES = ['Tous', 'en_attente', 'confirme', 'annule'];
   const LABELS  = { Tous: 'Tous', en_attente: 'En attente', confirme: 'Confirme', annule: 'Annule' };
 
-  const visible = filtre === 'Tous' ? resas : resas.filter(r => r.statut === filtre);
+  // Filtre d'abord par boutique, puis par statut
+  const parBoutique = resas.filter(r => r.boutique === boutiqueName);
+  const visible = filtre === 'Tous' ? parBoutique : parBoutique.filter(r => r.statut === filtre);
   const update  = (id, statut) => setResas(prev => prev.map(r => r.id === id ? { ...r, statut } : r));
 
   return (
@@ -818,16 +823,54 @@ function ReservationsView({ accent }) {
 
 // ── Vue Evenements ────────────────────────────────────────────
 
-function EvenementsView({ accent }) {
+function EvenementsView({ accent, shop }) {
   const [events, setEvents] = React.useState(ADMIN_EVENTS);
+  const [showAdd, setShowAdd] = React.useState(false);
+  const [newEvt, setNewEvt] = React.useState({ titre: '', date: '', prix: '', boutique: '' });
+
+  const boutiqueName = TSUNDOKU[shop].name;
+  // Filtre par boutique active
+  const visible = events.filter(e => e.boutique === boutiqueName);
+
   const toggle = (id) => setEvents(prev => prev.map(e => e.id === id ? { ...e, actif: !e.actif } : e));
+  const supprimer = (id) => setEvents(prev => prev.filter(e => e.id !== id));
+
+  const ajouter = () => {
+    if (!newEvt.titre.trim()) return;
+    const evt = {
+      id: Date.now(),
+      titre: newEvt.titre,
+      date: newEvt.date || 'A definir',
+      boutique: boutiqueName,
+      prix: newEvt.prix || 'Gratuit',
+      inscrits: 0,
+      actif: true,
+    };
+    setEvents(prev => [...prev, evt]);
+    setNewEvt({ titre: '', date: '', prix: '', boutique: '' });
+    setShowAdd(false);
+  };
 
   return (
     <div>
-      <SectionHeader accent={accent} label="EVENEMENTS · イベント" title="Evenements" />
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+        <SectionHeader accent={accent} label="EVENEMENTS · イベント" title="Evenements" />
+        <button onClick={() => setShowAdd(true)} style={{
+          background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.7)',
+          border: '1px solid rgba(255,255,255,.15)',
+          padding: '10px 22px', fontSize: 11, letterSpacing: 3, fontWeight: 700,
+          borderRadius: 99, cursor: 'pointer', fontFamily: FONTS.body, textTransform: 'uppercase',
+        }}>+ Ajouter</button>
+      </div>
+
+      {visible.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,.3)' }}>
+          Aucun evenement pour {boutiqueName}.
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {events.map(ev => (
+        {visible.map(ev => (
           <div key={ev.id} style={{
             background: '#14141c',
             border: `1px solid ${ev.actif ? 'rgba(255,255,255,.1)' : 'rgba(255,255,255,.04)'}`,
@@ -854,7 +897,6 @@ function EvenementsView({ accent }) {
                 {ev.titre}
               </div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,.45)', display: 'flex', gap: 16 }}>
-                <span>◇ {ev.boutique}</span>
                 <span>· {ev.prix}</span>
                 <span>· {ev.inscrits} inscrits</span>
               </div>
@@ -863,31 +905,94 @@ function EvenementsView({ accent }) {
             {/* Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               <StatusBadge statut={ev.actif ? 'confirme' : 'annule'} />
-              <ActionBtn
-                label={ev.actif ? 'Desactiver' : 'Activer'}
-                onClick={() => toggle(ev.id)}
-              />
+              <ActionBtn label={ev.actif ? 'Desactiver' : 'Activer'} onClick={() => toggle(ev.id)} />
+              <ActionBtn label="Suppr." color="#ff5050" onClick={() => supprimer(ev.id)} />
             </div>
           </div>
         ))}
       </div>
+
+      {/* Modale ajout evenement */}
+      {showAdd && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(6px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setShowAdd(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#14141c', border: '1px solid ' + accent + '44', borderRadius: 12, padding: 40, width: 460, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', inset: 0, color: accent, opacity: .05, ...HALFTONE_MED, borderRadius: 12, pointerEvents: 'none' }} />
+            <div style={{ position: 'relative' }}>
+              <div style={{ fontSize: 11, letterSpacing: 4, color: accent, fontWeight: 700, marginBottom: 6 }}>NOUVEL EVENEMENT</div>
+              <div style={{ fontFamily: FONTS.display, fontSize: 36, color: '#fff', marginBottom: 24 }}>Ajouter</div>
+              {[['Titre', 'titre', 'Ex: Dedicace Gege Akutami'], ['Date', 'date', 'Ex: 15 Mai 2026'], ['Prix', 'prix', 'Ex: Gratuit ou 5e']].map(([label, key, ph]) => (
+                <div key={key} style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,.45)', marginBottom: 6, fontWeight: 700 }}>{label.toUpperCase()}</div>
+                  <input value={newEvt[key]} onChange={e => setNewEvt(prev => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={ph} style={{ width: '100%', padding: '10px 14px', background: '#0a0a12', border: '1px solid rgba(255,255,255,.1)', color: '#fff', fontSize: 14, fontFamily: FONTS.body, borderRadius: 4, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              ))}
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 16 }}>
+                Boutique : <strong style={{ color: accent }}>{boutiqueName}</strong>
+              </div>
+              <button onClick={ajouter} style={{ width: '100%', background: accent, color: '#0a0a12', border: 'none', padding: '13px', fontSize: 12, letterSpacing: 3, fontWeight: 700, borderRadius: 99, cursor: 'pointer', fontFamily: FONTS.body }}>
+                Enregistrer →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Vue Equipe ────────────────────────────────────────────────
 
-function EquipeView({ accent }) {
+function EquipeView({ accent, shop }) {
+  const [team, setTeam] = React.useState(ADMIN_TEAM);
+  const [showAdd, setShowAdd] = React.useState(false);
+  const [newMember, setNewMember] = React.useState({ name: '', role: '', kanji: '' });
+
+  const boutiqueName = TSUNDOKU[shop].name;
+  // Filtre par boutique active
+  const visible = team.filter(m => m.boutique === boutiqueName);
+
+  const supprimer = (name) => setTeam(prev => prev.filter(m => m.name !== name));
+
+  const ajouter = () => {
+    if (!newMember.name.trim()) return;
+    const membre = {
+      name: newMember.name,
+      role: newMember.role || 'Libraire',
+      boutique: boutiqueName,
+      kanji: newMember.kanji || '人',
+      accent: accent,
+    };
+    setTeam(prev => [...prev, membre]);
+    setNewMember({ name: '', role: '', kanji: '' });
+    setShowAdd(false);
+  };
+
   return (
     <div>
-      <SectionHeader accent={accent} label="EQUIPE · チーム" title="Membres" />
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+        <SectionHeader accent={accent} label="EQUIPE · チーム" title="Membres" />
+        <button onClick={() => setShowAdd(true)} style={{
+          background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.7)',
+          border: '1px solid rgba(255,255,255,.15)',
+          padding: '10px 22px', fontSize: 11, letterSpacing: 3, fontWeight: 700,
+          borderRadius: 99, cursor: 'pointer', fontFamily: FONTS.body, textTransform: 'uppercase',
+        }}>+ Ajouter</button>
+      </div>
+
+      {visible.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: 'rgba(255,255,255,.3)' }}>
+          Aucun membre pour {boutiqueName}.
+        </div>
+      )}
 
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
         gap: 16,
       }}>
-        {ADMIN_TEAM.map(m => (
+        {visible.map(m => (
           <div key={m.name} style={{
             background: '#14141c', border: '1px solid rgba(255,255,255,.1)',
             borderRadius: 8, padding: '28px 24px', position: 'relative', overflow: 'hidden',
@@ -910,17 +1015,39 @@ function EquipeView({ accent }) {
               }}>{m.kanji}</div>
 
               <div style={{ fontFamily: FONTS.display, fontSize: 20, color: '#fff', marginBottom: 4 }}>{m.name}</div>
-              <div style={{ fontSize: 12, letterSpacing: 1, color: 'rgba(255,255,255,.45)', marginBottom: 8 }}>{m.role}</div>
-              <div style={{
-                display: 'inline-block', fontSize: 10, letterSpacing: 2, color: m.accent,
-                background: m.accent + '1a', padding: '3px 10px', borderRadius: 99, marginBottom: 20,
-              }}>{m.boutique}</div>
-              <br />
-              <ActionBtn label="Modifier" color={m.accent} />
+              <div style={{ fontSize: 12, letterSpacing: 1, color: 'rgba(255,255,255,.45)', marginBottom: 16 }}>{m.role}</div>
+              <ActionBtn label="Supprimer" color="#ff5050" onClick={() => supprimer(m.name)} />
             </div>
           </div>
         ))}
       </div>
+
+      {/* Modale ajout membre */}
+      {showAdd && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(6px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setShowAdd(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#14141c', border: '1px solid ' + accent + '44', borderRadius: 12, padding: 40, width: 460, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', inset: 0, color: accent, opacity: .05, ...HALFTONE_MED, borderRadius: 12, pointerEvents: 'none' }} />
+            <div style={{ position: 'relative' }}>
+              <div style={{ fontSize: 11, letterSpacing: 4, color: accent, fontWeight: 700, marginBottom: 6 }}>NOUVEAU MEMBRE</div>
+              <div style={{ fontFamily: FONTS.display, fontSize: 36, color: '#fff', marginBottom: 24 }}>Ajouter</div>
+              {[['Nom complet', 'name', 'Ex: Mehdi Ayyadi'], ['Role', 'role', 'Ex: Libraire shonen'], ['Kanji', 'kanji', 'Un seul caractere, ex: 力']].map(([label, key, ph]) => (
+                <div key={key} style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,.45)', marginBottom: 6, fontWeight: 700 }}>{label.toUpperCase()}</div>
+                  <input value={newMember[key]} onChange={e => setNewMember(prev => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={ph} style={{ width: '100%', padding: '10px 14px', background: '#0a0a12', border: '1px solid rgba(255,255,255,.1)', color: '#fff', fontSize: 14, fontFamily: FONTS.body, borderRadius: 4, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              ))}
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 16 }}>
+                Boutique : <strong style={{ color: accent }}>{boutiqueName}</strong>
+              </div>
+              <button onClick={ajouter} style={{ width: '100%', background: accent, color: '#0a0a12', border: 'none', padding: '13px', fontSize: 12, letterSpacing: 3, fontWeight: 700, borderRadius: 99, cursor: 'pointer', fontFamily: FONTS.body }}>
+                Enregistrer →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1027,9 +1154,9 @@ function AdminPage({ shop, onBack, onShopSwitch }) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '48px 52px' }}>
         {section === 'dashboard'    && <DashboardView    accent={accent} />}
         {section === 'catalogue'    && <CatalogueView    accent={accent} />}
-        {section === 'reservations' && <ReservationsView accent={accent} />}
-        {section === 'evenements'   && <EvenementsView   accent={accent} />}
-        {section === 'equipe'       && <EquipeView       accent={accent} />}
+        {section === 'reservations' && <ReservationsView accent={accent} shop={shop} />}
+        {section === 'evenements'   && <EvenementsView   accent={accent} shop={shop} />}
+        {section === 'equipe'       && <EquipeView       accent={accent} shop={shop} />}
       </div>
     </div>
   );
