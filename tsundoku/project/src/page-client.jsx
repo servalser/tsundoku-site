@@ -1,5 +1,5 @@
 // page-client.jsx
-// Espace client : réservations actives + informations de profil.
+// Espace client : points de fidélité, réservations actives, profil.
 // Export : ClientPage (disponible sur window.ClientPage)
 
 function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, onBack, onToggleTheme, onShopSwitch, onNav }) {
@@ -15,7 +15,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
   const border = dark ? 'rgba(255,255,255,.08)'    : 'rgba(0,0,0,.08)';
 
   // ── État local ──
-  const [onglet,    setOnglet]    = React.useState('reservations');
+  const [onglet,    setOnglet]    = React.useState('fidelite');
   const [resas,     setResas]     = React.useState([]);
   const [loading,   setLoading]   = React.useState(true);
   const [annulant,  setAnnulant]  = React.useState(null); // id de la resa en cours d'annulation
@@ -44,7 +44,6 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
     try {
       const { ok, data } = await apiFetch(`/api/reservations/${id}`, { method: 'DELETE' });
       if (ok && data.success) {
-        // Retrait immédiat de la liste locale
         setResas(prev => prev.filter(r => r.id !== id));
         afficherFlash('Réservation annulée avec succès.');
       } else {
@@ -67,6 +66,27 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
     ? `${client.prenom?.[0] || ''}${client.nom?.[0] || ''}`.toUpperCase()
     : '?';
 
+  // ── Points de fidélité ──
+  const points = client?.points_fidelite || 0;
+
+  // Paliers de fidélité — chaque palier a un nom et un seuil de points
+  const paliers = [
+    { nom: 'Genin',     seuil: 0,   couleur: '#94a3b8' },
+    { nom: 'Chunin',    seuil: 50,  couleur: '#38bdf8' },
+    { nom: 'Jonin',     seuil: 150, couleur: '#a78bfa' },
+    { nom: 'Kage',      seuil: 300, couleur: '#f59e0b' },
+    { nom: 'Hokage',    seuil: 500, couleur: '#ef4444' },
+  ];
+
+  // Palier actuel du client
+  const palierActuel = [...paliers].reverse().find(p => points >= p.seuil) || paliers[0];
+  // Prochain palier (null si au max)
+  const palierSuivant = paliers.find(p => p.seuil > points) || null;
+  // Progression vers le prochain palier (en %)
+  const progression = palierSuivant
+    ? ((points - palierActuel.seuil) / (palierSuivant.seuil - palierActuel.seuil)) * 100
+    : 100;
+
   // ── Libellé et couleur d'un statut de réservation ──
   function statutInfo(statut) {
     if (statut === 'en_attente') return { label: 'En préparation',   couleur: '#f59e0b' };
@@ -76,7 +96,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
 
   return (
     <>
-      {/* Barre de navigation réutilisée depuis shop-nav.jsx */}
+      {/* Barre de navigation */}
       <Navbar
         shop={shop} theme={theme} connected={connected} client={client}
         onConnect={onConnect} onBack={onBack} onToggleTheme={onToggleTheme}
@@ -86,7 +106,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
       <div style={{ minHeight: '100vh', background: bg, color: ink, fontFamily: FONTS.body }}>
 
         {/* ════════════════════════════════════════════
-            BLOC EN-TÊTE — avatar, nom, email, déco     */}
+            BLOC EN-TÊTE — avatar, nom, email, points   */}
         <div style={{
           background: S.bgDeep,
           borderBottom: `1px solid ${S.accent}25`,
@@ -114,18 +134,43 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
                 fontSize: bp.isMobile ? 20 : 26, fontWeight: 900, flexShrink: 0,
               }}>{initiales}</div>
 
-              {/* Nom + email */}
+              {/* Nom + email + badge palier */}
               <div style={{ flex: 1 }}>
-                <div style={{
-                  fontFamily: FONTS.display,
-                  fontSize: bp.isMobile ? 22 : 30,
-                  lineHeight: 1, letterSpacing: -1, color: '#fff',
-                }}>
-                  {client ? `${client.prenom} ${client.nom}` : 'Mon compte'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  {/* Pas d'accents dans FONTS.display */}
+                  <div style={{
+                    fontFamily: FONTS.display,
+                    fontSize: bp.isMobile ? 22 : 30,
+                    lineHeight: 1, letterSpacing: -1, color: '#fff',
+                  }}>
+                    {client ? `${client.prenom} ${client.nom}` : 'Mon compte'}
+                  </div>
+                  {/* Badge du palier de fidélité */}
+                  <div style={{
+                    padding: '3px 10px', borderRadius: 99,
+                    background: `${palierActuel.couleur}22`,
+                    border: `1px solid ${palierActuel.couleur}44`,
+                    color: palierActuel.couleur,
+                    fontSize: 10, fontWeight: 700, letterSpacing: 1.5,
+                    textTransform: 'uppercase',
+                  }}>{palierActuel.nom}</div>
                 </div>
                 <div style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', marginTop: 6 }}>
                   {client?.email}
                 </div>
+              </div>
+
+              {/* Compteur de points dans l'en-tête */}
+              <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                <div style={{
+                  fontFamily: FONTS.display, fontWeight: 900,
+                  fontSize: bp.isMobile ? 28 : 38, lineHeight: 1,
+                  color: S.accent,
+                }}>{points}</div>
+                <div style={{
+                  fontSize: 9, letterSpacing: 2, textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,.4)', marginTop: 4, fontWeight: 700,
+                }}>POINTS</div>
               </div>
 
               {/* Bouton déconnexion */}
@@ -136,9 +181,8 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
                 border: '1px solid rgba(255,255,255,.15)',
                 fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
                 cursor: 'pointer', fontFamily: FONTS.body, flexShrink: 0,
-                transition: 'color .2s',
               }}>
-                Déconnexion
+                Deconnexion
               </button>
             </div>
           </div>
@@ -150,10 +194,14 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
           borderBottom: `1px solid ${border}`,
           background: dark ? 'rgba(255,255,255,.02)' : 'rgba(0,0,0,.02)',
         }}>
-          <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 20px', display: 'flex' }}>
+          <div style={{
+            maxWidth: 900, margin: '0 auto', padding: '0 20px',
+            display: 'flex', overflowX: 'auto',
+          }}>
             {[
-              ['reservations', 'Mes réservations'],
-              ['profil',       'Mon profil'],
+              ['fidelite',      'Fidelite'],
+              ['reservations',  'Reservations'],
+              ['profil',        'Profil'],
             ].map(([id, label]) => (
               <button key={id} onClick={() => setOnglet(id)} style={{
                 padding: '15px 20px', border: 'none', background: 'transparent',
@@ -161,7 +209,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
                 fontWeight: 700, fontSize: 12, letterSpacing: 2,
                 textTransform: 'uppercase', cursor: 'pointer', fontFamily: FONTS.body,
                 borderBottom: onglet === id ? `2px solid ${S.accent}` : '2px solid transparent',
-                marginBottom: -1, transition: 'color .15s',
+                marginBottom: -1, transition: 'color .15s', whiteSpace: 'nowrap',
               }}>{label}</button>
             ))}
           </div>
@@ -174,7 +222,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
           padding: bp.isMobile ? '24px 16px' : '40px 20px',
         }}>
 
-          {/* Message flash (succès / erreur) */}
+          {/* Message flash */}
           {flash && (
             <div style={{
               marginBottom: 20, padding: '12px 16px',
@@ -183,17 +231,174 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
             }}>{flash}</div>
           )}
 
+          {/* ── ONGLET FIDÉLITÉ ── */}
+          {onglet === 'fidelite' && (
+            <div>
+              {/* Titre sans accents (Crispy Tofu) */}
+              <div style={{ fontFamily: FONTS.display, fontSize: 22, letterSpacing: -.5, marginBottom: 28 }}>
+                Programme de fidelite
+              </div>
+
+              {/* Carte principale — points + barre de progression */}
+              <div style={{
+                background: card, border: `1px solid ${border}`, borderRadius: 12,
+                padding: bp.isMobile ? '24px 20px' : '32px 36px',
+                marginBottom: 20,
+              }}>
+                {/* Ligne : points actuels + palier */}
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+                  <div>
+                    <div style={{
+                      fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase',
+                      color: muted, fontWeight: 700, marginBottom: 8,
+                    }}>MES POINTS</div>
+                    <div style={{
+                      fontFamily: FONTS.display, fontWeight: 900,
+                      fontSize: bp.isMobile ? 48 : 64, lineHeight: 1, color: S.accent,
+                    }}>{points}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{
+                      fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase',
+                      color: muted, fontWeight: 700, marginBottom: 8,
+                    }}>RANG ACTUEL</div>
+                    <div style={{
+                      fontFamily: FONTS.display, fontSize: 24, color: palierActuel.couleur,
+                    }}>{palierActuel.nom}</div>
+                  </div>
+                </div>
+
+                {/* Barre de progression vers le prochain palier */}
+                {palierSuivant && (
+                  <div>
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-between',
+                      fontSize: 11, color: muted, marginBottom: 8,
+                    }}>
+                      <span>{palierActuel.nom} ({palierActuel.seuil} pts)</span>
+                      <span>{palierSuivant.nom} ({palierSuivant.seuil} pts)</span>
+                    </div>
+                    {/* Fond de la barre */}
+                    <div style={{
+                      width: '100%', height: 8, borderRadius: 99,
+                      background: dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)',
+                      overflow: 'hidden',
+                    }}>
+                      {/* Remplissage */}
+                      <div style={{
+                        width: `${Math.min(progression, 100)}%`, height: '100%',
+                        borderRadius: 99,
+                        background: `linear-gradient(90deg, ${palierActuel.couleur}, ${palierSuivant.couleur})`,
+                        transition: 'width .6s ease',
+                      }} />
+                    </div>
+                    <div style={{ fontSize: 12, color: muted, marginTop: 8 }}>
+                      Encore <strong style={{ color: ink }}>{palierSuivant.seuil - points}</strong> points pour atteindre le rang {palierSuivant.nom}
+                    </div>
+                  </div>
+                )}
+
+                {/* Message quand le joueur est au palier max */}
+                {!palierSuivant && (
+                  <div style={{
+                    fontSize: 14, color: palierActuel.couleur, fontWeight: 600,
+                    marginTop: 8,
+                  }}>
+                    Rang maximum atteint !
+                  </div>
+                )}
+              </div>
+
+              {/* Tous les paliers */}
+              <div style={{
+                background: card, border: `1px solid ${border}`, borderRadius: 12,
+                padding: bp.isMobile ? '20px 16px' : '28px 36px',
+                marginBottom: 20,
+              }}>
+                <div style={{
+                  fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase',
+                  color: muted, fontWeight: 700, marginBottom: 20,
+                }}>PALIERS</div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {paliers.map((p, i) => {
+                    const atteint = points >= p.seuil;
+                    return (
+                      <div key={p.nom} style={{
+                        display: 'flex', alignItems: 'center', gap: 16,
+                        padding: '14px 0',
+                        borderBottom: i < paliers.length - 1 ? `1px solid ${border}` : 'none',
+                        opacity: atteint ? 1 : .4,
+                      }}>
+                        {/* Indicateur rond */}
+                        <div style={{
+                          width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+                          background: atteint ? p.couleur : 'transparent',
+                          border: `2px solid ${p.couleur}`,
+                        }} />
+                        {/* Nom du palier */}
+                        <div style={{ flex: 1, fontWeight: 700, fontSize: 14, color: atteint ? ink : muted }}>
+                          {p.nom}
+                        </div>
+                        {/* Seuil */}
+                        <div style={{
+                          fontSize: 12, color: atteint ? p.couleur : muted, fontWeight: 600,
+                        }}>{p.seuil} pts</div>
+                        {/* Check si atteint */}
+                        {atteint && (
+                          <span style={{ color: p.couleur, fontSize: 14 }}>✓</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Comment gagner des points */}
+              <div style={{
+                background: card, border: `1px solid ${border}`, borderRadius: 12,
+                padding: bp.isMobile ? '20px 16px' : '28px 36px',
+              }}>
+                <div style={{
+                  fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase',
+                  color: muted, fontWeight: 700, marginBottom: 16,
+                }}>COMMENT GAGNER DES POINTS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[
+                    ['Reservation recuperee', '+10 pts', 'Chaque manga recupere en boutique rapporte 10 points.'],
+                  ].map(([titre, pts, desc]) => (
+                    <div key={titre} style={{
+                      display: 'flex', alignItems: 'center', gap: 16,
+                      padding: '12px 16px', borderRadius: 8,
+                      background: dark ? 'rgba(255,255,255,.03)' : 'rgba(0,0,0,.02)',
+                    }}>
+                      <div style={{
+                        padding: '4px 10px', borderRadius: 6,
+                        background: `${S.accent}18`, color: S.accent,
+                        fontSize: 12, fontWeight: 700, flexShrink: 0,
+                      }}>{pts}</div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{titre}</div>
+                        <div style={{ fontSize: 12, color: muted, marginTop: 2 }}>{desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── ONGLET RÉSERVATIONS ── */}
           {onglet === 'reservations' && (
             <div>
-              {/* Sous-titre + compteur */}
+              {/* Sous-titre + compteur — sans accents dans FONTS.display */}
               <div style={{
                 display: 'flex', alignItems: 'flex-start',
                 justifyContent: 'space-between', marginBottom: 28, gap: 12,
               }}>
                 <div>
                   <div style={{ fontFamily: FONTS.display, fontSize: 22, letterSpacing: -.5 }}>
-                    Réservations actives
+                    Reservations actives
                   </div>
                   <div style={{ fontSize: 12, color: muted, marginTop: 5, lineHeight: 1.5 }}>
                     Maximum 3 réservations · Mise de côté 7 jours
@@ -222,13 +427,12 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
                   textAlign: 'center', padding: bp.isMobile ? '48px 20px' : '64px 20px',
                   background: card, border: `1px solid ${border}`, borderRadius: 10,
                 }}>
-                  {/* Kanji décoratif */}
                   <div style={{
                     fontFamily: FONTS.jpDisplay, fontWeight: 900,
                     fontSize: 64, color: S.accent, opacity: .4, marginBottom: 12,
                   }}>積</div>
                   <div style={{ fontFamily: FONTS.display, fontSize: 20, marginBottom: 8 }}>
-                    Aucune réservation active
+                    Aucune reservation active
                   </div>
                   <div style={{ fontSize: 14, color: muted, marginBottom: 28, lineHeight: 1.5 }}>
                     Rendez-vous dans le catalogue pour réserver vos mangas.
@@ -328,6 +532,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
           {/* ── ONGLET PROFIL ── */}
           {onglet === 'profil' && (
             <div>
+              {/* Pas d'accents dans FONTS.display */}
               <div style={{ fontFamily: FONTS.display, fontSize: 22, letterSpacing: -.5, marginBottom: 24 }}>
                 Informations personnelles
               </div>
@@ -347,13 +552,11 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
                     padding: '18px 24px',
                     borderBottom: i < arr.length - 1 ? `1px solid ${border}` : 'none',
                   }}>
-                    {/* Libellé de la ligne */}
                     <div style={{
                       width: 100, flexShrink: 0,
                       fontSize: 10, letterSpacing: 2.5, textTransform: 'uppercase',
                       color: muted, fontWeight: 700,
                     }}>{label}</div>
-                    {/* Valeur */}
                     <div style={{ fontSize: 15, fontWeight: 500 }}>{valeur}</div>
                   </div>
                 ))}
@@ -377,7 +580,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
                 </a>.
               </div>
 
-              {/* Bouton de déconnexion dans la section profil */}
+              {/* Bouton de déconnexion */}
               <button onClick={onDeconnect} style={{
                 marginTop: 32,
                 padding: '12px 24px', borderRadius: 99,
@@ -387,7 +590,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
                 fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase',
                 cursor: 'pointer', fontFamily: FONTS.body,
               }}>
-                Se déconnecter
+                Se deconnecter
               </button>
             </div>
           )}
