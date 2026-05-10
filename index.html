@@ -233,12 +233,21 @@ function Site({ shop, onShopChange, theme, onThemeToggle, initialView }) {
   const [view, setView]       = React.useState(initialView || 'choice');
   const [mangaId, setMangaId] = React.useState('cs');
   const [loginOpen, setLoginOpen]   = React.useState(false);
-  const [connected, setConnected]   = React.useState(false);
+  // Mode demo : quand on arrive via /#admin ou /#compte, on injecte un profil fictif
+  // pour que les pages soient visitables sans backend (utile sur GitHub Pages).
+  const isDemo = initialView === 'admin' || initialView === 'client';
+  const demoClient = {
+    id: 0, nom: 'Tanaka', prenom: 'Yuki', email: 'yuki@tsundoku.fr',
+    points_fidelite: 80,
+  };
+
+  const [connected, setConnected]   = React.useState(isDemo);
   // Profil du client connecté — null si non connecté
-  const [client, setClient]         = React.useState(null);
+  const [client, setClient]         = React.useState(isDemo ? demoClient : null);
 
   /* Restaure la session au chargement si le cookie de session est encore valide */
   React.useEffect(() => {
+    if (isDemo) return; // pas besoin de vérifier la session en mode demo
     apiFetch('/api/auth/session').then(({ ok, data }) => {
       if (ok && data.success) {
         setConnected(true);
@@ -350,8 +359,11 @@ function App() {
   const [shop, setShop] = React.useState('marseille');
 
   /* Detection du hash dans l'URL pour acceder directement a une vue.
-     Ex : http://localhost:7788/#admin ouvre le panel admin sans passer par le split-screen. */
-  const initialView = window.location.hash === '#admin' ? 'admin' : 'choice';
+     Ex : /#admin → panel admin, /#compte → espace client (mode demo, sans backend) */
+  const hash = window.location.hash;
+  const initialView = hash === '#admin' ? 'admin'
+                    : hash === '#compte' ? 'client'
+                    : 'choice';
 
   return (
     <div style={{ width: '100vw', height: '100vh' }}>

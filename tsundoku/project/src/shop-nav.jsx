@@ -409,8 +409,8 @@ function HeroGallery({ shop, theme, intensity, onNav }) {
           // Masquer le sous-titre sur très petit écran pour gagner de la place
           display: bp.isMobile ? 'none' : 'block',
         }}>
-          Plus de 12 000 volumes, une equipe de passionnes, et une communaute qui se retrouve
-          ici chaque mercredi pour les nouvelles sorties.
+          12 000 volumes en stock. L'equipe connait ses classiques
+          et les mercredis de sortie remplissent la boutique.
         </div>
 
         {/* CTA — colonne sur mobile, ligne sur desktop */}

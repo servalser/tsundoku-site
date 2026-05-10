@@ -129,8 +129,8 @@ function SplitScreenA({ width = 1400, height = 860, animIntensity = 1 }) {
         {/* Onomatopée — masquée sur mobile (trop chargé) */}
         {!bp.isMobile && (
           <Onomatopoeia
-            text="ドン"
-            translit="DOON!"
+            text="ドキドキ"
+            translit="DOKIDOKI!"
             x="8%"
             y="54%"
             rotate={-10}

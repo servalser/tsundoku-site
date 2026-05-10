@@ -7,7 +7,7 @@ const EVENT = {
   tag:   'Rencontre',
   kanji: '会',
   ono:   'KON-KON !',
-  desc:  "Le mangaka de Chainsaw Man et Fire Punch passe par Tsundoku pour une seance de dedicaces exceptionnelle. 2h de signature, echange informel avec l'equipe, et une presentation de son prochain projet en avant-premiere francaise.",
+  desc:  "Le mangaka de Chainsaw Man et Fire Punch passe chez Tsundoku. 2h de dedicaces, discussion libre avec l'equipe et un apercu de son prochain projet — en exclu francaise.",
   price: 'Gratuit · entree libre',
 };
 

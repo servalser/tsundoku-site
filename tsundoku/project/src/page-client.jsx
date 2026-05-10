@@ -435,7 +435,7 @@ function ClientPage({ shop, theme, connected, client, onConnect, onDeconnect, on
                     Aucune reservation active
                   </div>
                   <div style={{ fontSize: 14, color: muted, marginBottom: 28, lineHeight: 1.5 }}>
-                    Rendez-vous dans le catalogue pour réserver vos mangas.
+                    Allez jeter un oeil au catalogue pour reserver vos mangas.
                   </div>
                   <button onClick={() => onNav('catalog')} style={{
                     padding: '12px 28px', borderRadius: 99,

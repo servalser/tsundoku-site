@@ -195,8 +195,8 @@ function QuizzTeaser({ shop, theme, onNav }) {
               Les quizz<br/>de la maison.
             </h2>
             <p style={{ fontSize: bp.isMobile ? 15 : 17, lineHeight: 1.6, color: muted, marginTop: 20, maxWidth: 440 }}>
-              Concus par les clients, pour les clients. Teste tes connaissances
-              et propose ton propre quizz en boutique.
+              Les quizz viennent des clients. Teste tes connaissances
+              ou cree le tien directement en boutique.
             </p>
             <button onClick={() => onNav && onNav('quizz')} style={{
               marginTop: 30,

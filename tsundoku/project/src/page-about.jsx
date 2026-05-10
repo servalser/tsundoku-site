@@ -2,7 +2,7 @@
 // Exports: AboutPage
 
 const TEAM = [
-  { name: 'Yuki Kawashima', role: 'Fondatrice · Toulon',          kanji: '雪', accent: '#ff7db8', bio: 'Passionnee de manga depuis l\'enfance, Yuki a ouvert Tsundoku Toulon en 2018 avec une idee simple : une librairie tenue par des fans, pour des fans.' },
+  { name: 'Yuki Kawashima', role: 'Fondatrice · Toulon',          kanji: '雪', accent: '#ff7db8', bio: 'Yuki a ouvert Tsundoku Toulon en 2018. L\'idee : une librairie tenue par des gens qui lisent vraiment ce qu\'ils vendent.' },
   { name: 'Mika Odan',      role: 'Libraire · specialiste shonen', kanji: '力', accent: '#f4c83d', bio: 'Mika peut citer les 1000 tomes de One Piece par coeur et convaincre n\'importe qui de lire Vinland Saga en moins de 3 minutes.' },
   { name: 'Camille Torres', role: 'Libraire · ateliers dessin',    kanji: '筆', accent: '#8cd3a0', bio: 'Illustratrice le week-end, libraire la semaine. Camille anime nos ateliers dessin manga chaque mois.' },
   { name: 'Nassim Belaid',  role: 'Co-fondateur · Marseille',      kanji: '海', accent: '#e8b648', bio: 'Nassim a rejoint l\'aventure pour ouvrir la boutique Marseille en 2021. Fan de Berserk et de recits epiques.' },
