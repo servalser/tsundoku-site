@@ -2,10 +2,10 @@
 // Exports: AboutPage
 
 const TEAM = [
-  { name: 'Yuki Kawashima', role: 'Fondatrice · Toulon',          kanji: '雪', accent: '#ff7db8', bio: 'Yuki a ouvert Tsundoku Toulon en 2018. L\'idee : une librairie tenue par des gens qui lisent vraiment ce qu\'ils vendent.' },
-  { name: 'Mika Odan',      role: 'Libraire · specialiste shonen', kanji: '力', accent: '#f4c83d', bio: 'Mika peut citer les 1000 tomes de One Piece par coeur et convaincre n\'importe qui de lire Vinland Saga en moins de 3 minutes.' },
-  { name: 'Camille Torres', role: 'Libraire · ateliers dessin',    kanji: '筆', accent: '#8cd3a0', bio: 'Illustratrice le week-end, libraire la semaine. Camille anime nos ateliers dessin manga chaque mois.' },
-  { name: 'Nassim Belaid',  role: 'Co-fondateur · Marseille',      kanji: '海', accent: '#e8b648', bio: 'Nassim a rejoint l\'aventure pour ouvrir la boutique Marseille en 2021. Fan de Berserk et de recits epiques.' },
+  { name: 'Armony',  role: 'Libraire · Toulon',    kanji: '花', accent: '#ff7db8', bio: 'Toujours un manga a recommander et un avis tranche sur les derniers chapitres.' },
+  { name: 'Damien',  role: 'Libraire · Toulon',    kanji: '力', accent: '#f4c83d', bio: 'Specialiste shonen, il peut debattre pendant des heures de quel arc de One Piece est le meilleur.' },
+  { name: 'Fred',    role: 'Libraire · Marseille',  kanji: '海', accent: '#e8b648', bio: 'Fan de seinen et de recits sombres. Si vous cherchez du Berserk ou du Vagabond, c\'est lui qu\'il faut voir.' },
+  { name: 'Fanny',   role: 'Libraire · Marseille',  kanji: '星', accent: '#8cd3a0', bio: 'Elle gere les evenements et connait chaque client par son prenom. Ambiance garantie.' },
 ];
 
 const VALEURS = [

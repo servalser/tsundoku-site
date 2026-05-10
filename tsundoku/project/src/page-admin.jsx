@@ -37,10 +37,10 @@ const ADMIN_EVENTS = [
 ];
 
 const ADMIN_TEAM = [
-  { name: 'Yuki Kawashima', role: 'Fondatrice',     boutique: 'Toulon',    kanji: '雪', accent: '#ff7db8' },
-  { name: 'Mika Odan',      role: 'Libraire shonen', boutique: 'Toulon',   kanji: '力', accent: '#f4c83d' },
-  { name: 'Camille Torres', role: 'Ateliers dessin', boutique: 'Toulon',   kanji: '筆', accent: '#8cd3a0' },
-  { name: 'Nassim Belaid',  role: 'Co-fondateur',    boutique: 'Marseille', kanji: '海', accent: '#e8b648' },
+  { name: 'Armony',  role: 'Libraire', boutique: 'Toulon',    kanji: '花', accent: '#ff7db8' },
+  { name: 'Damien',  role: 'Libraire', boutique: 'Toulon',    kanji: '力', accent: '#f4c83d' },
+  { name: 'Fred',    role: 'Libraire', boutique: 'Marseille', kanji: '海', accent: '#e8b648' },
+  { name: 'Fanny',   role: 'Libraire', boutique: 'Marseille', kanji: '星', accent: '#8cd3a0' },
 ];
 
 // ── Composants utilitaires ────────────────────────────────────
